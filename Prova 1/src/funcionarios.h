@@ -3,6 +3,9 @@
 #include <time.h>
 #include <string.h>
 
+// Lucas Nunes Silveira - 20.2.8040
+// Matheus Lopes Moreira - 20.2.8002
+
 #define MAXTAM 2
 
  typedef struct Funcionario {
@@ -11,11 +14,11 @@
      char cpf[15];
      char data_nascimento[11];
      float salario;
-     int qtd_comparacoes;
+    //  int qtd_comparacoes;
  }TFunc;
 
  typedef struct key_sorting{
-    int cod;
+    int cod; //key
     long RRN;
  }Key_sorting;
 
