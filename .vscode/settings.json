@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "funcionarios.h": "c",
+        "time.h": "c",
+        "string.h": "c",
+        "lista_funcionarios.h": "c"
+    }
+}
