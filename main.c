@@ -6,474 +6,449 @@
 #include <time.h>
 
 #include "headers\funcionarios.h"
-#include "headers\lista_funcionarios.h"
 #include "headers\nomes.h"
 #include "headers\geracao_particoes.h"
+#include "headers\hashing.h"
 
-// Lucas Nunes Silveira - 20.2.8040
-// Matheus Lopes Moreira - 20.2.8002
+// Criado por Vanessa Braganholo em 16/09/2018
+// Atualizado por: Lucas Nunes Silveira - 20.2.8040 / Matheus Lopes Moreira - 20.2.8002
 
-    // VAR globais
+// Vars globais
 
-    Nomes *nomes = NULL;
-    ListaFuncionarios *entrada, *oraculo, *saida;
-    Nomes *p;
+int base_verify = 0, arq_ordenado_verify = 0, qtd_funcionarios, hash_verify = 0;
+Nomes *nomes = NULL, *p;
+THash_encad_externo tabela_hash;
+THash_simples tabela_hash_simples;
+
+void criar_bd();
+void exec_Keysorting(FILE *arq, FILE *arq_ordenado);
+void exec_insertion_sort(FILE *arq_ins);
+void exec_busca_sequencial(FILE *arq);
+void imprime_bd(FILE *arq, FILE *arq_ordenado);
+void selec_sub();
+void selec_nat();
+void exec_hash_externo();
+void imprime_hash_externo();
+void exec_hash_simples();
+void imprime_hash_simples();
 
 int main(){
 
-    // Variáveis
+    // Vars
 
     FILE *arq = fopen(NOME_ARQUIVO_ENTRADA, "wb+");
     FILE *arq_ordenado = fopen("dados_KEY.dat", "wb+");
     FILE *arq_ins = fopen("dados_INS.dat", "wb+");
+    int condicao;
 
-    clock_t start_time_seq, end_time_seq, start_time_bin, end_time_bin;
-    double temp_exe_seq = 0.0, temp_exe_bin = 0.0;
-    int tot_comp_seq = 0, tot_comp_bin = 0;
-    int condicao, qtd_de_Func, find_func, baseid = 0, arq_ord_id = 0;
-    TFunc *func;
-    
-    if(arq == NULL){
+    if (arq == NULL)
+    {
         printf("\n!!! ERRO AO ABRIR ARQUIVO !!!");
         return 1;
     }
 
-    if(arq_ordenado == NULL){
+    if (arq_ordenado == NULL)
+    {
         printf("\n!!! ERRO AO ABRIR ARQUIVO !!!");
         return 1;
     }
 
-    do{
+    do
+    {
         printf("\n               ___ MENU ___\n");
         printf("\n[1] - Criar Base de Dados\n[2] - Procurar Funcionario por KEY_SORTING");
         printf("\n[3] - Procurar funcionario por INSERTION_SORT\n[4] - Procurar funcionario por BUSCA_SEQUENCIAL\n");
-        printf("[5] - Imprimir base de dados completa\n[6] - Gerar particoes usando Selecao por substituicao\n[7] - Gerar particoes usando selecao natural\n[0] - Sair\n");
-        
+        printf("[5] - Imprimir base de dados completa\n[6] - Gerar particoes usando Selecao por substituicao\n");
+        printf("[7] - Gerar particoes usando selecao natural\n[8] - Gerar tabela HASH Enderecamento Externo\n");
+        printf("[9] - Imprimir tabela HASH: Enderecamento Externo\n[10] - Gerar tabela HASH Enderecamento Simples\n");
+        printf("[11] - Imprimir tabela HASH: Enderecamento Simples\n[0] - Sair\n");
+
         printf("\nDigite a opcao desejada: ");
         scanf("%i", &condicao);
-        
-        switch(condicao){
-            case 1:
-                printf("\nQuantos funcionarios serao inseridos na base de dados? [min: 0, max: 100] _ ");
-                scanf("%i", &qtd_de_Func);
-                if(qtd_de_Func > 100 || qtd_de_Func <= 0){
-                    printf("\n!! Quantidade invalida !! / min = 0 e max = 100\n");
-                    break;
-                }else{
-                    cria_base_de_dados(arq, qtd_de_Func);   //Cria uma database no arquivo com funcionarios de códigos aleatórios
-                    cria_base_de_dados(arq_ins, qtd_de_Func);
-                    printf("\n*** Base de dados criada com sucesso\n");
-                    baseid ++;
-                    break;
-                }
-            case 2: 
-                if(baseid == 0){
-                    printf("\n!!! E necessario criar uma base de dados antes de buscar por um funcionario !!!\n");
-                    break;
-                }
-                arq_ord_id ++;
-                printf("\nDigite o codigo do funcionario que deseja buscar: _ ");
-                scanf("%i", &find_func);
-                Key_sorting_file(arq, arq_ordenado, qtd_de_Func); //Key_sorting é chamada recebendo o arquivo desordenado dados_KEY.dat, o arquivo vazio dados_ordenados.dat e a quantidade de funcionarios cadastrados. Ao fim da execução teremos o arquivo dados_ordenados.dat preenchido ordenadamente
 
-                start_time_bin = clock(); //Início da contagem do tempo de execução da busca sequencial
-                func = buscaBinaria(find_func, qtd_de_Func, arq_ordenado, &tot_comp_bin);
-                end_time_bin = clock(); //Término da contagem do tempo de execução da busca binaria
-
-                temp_exe_bin += (double)(end_time_bin-start_time_bin)/CLOCKS_PER_SEC;//Cálculo do tempo de execução da busca binaria
-    
-                printf("\n\n________ ## Teste utilizando a Busca Binaria (KEY_SORTING) ## ________\n\n");
-                if(func == NULL){
-                    printf("Funcionario inexistente na base de dados\n");
-                    printf("______________________________________________________________________\n\n");
-                }else{
-                    printf("Funcionario encontrado: Imprimindo...");
-                    toString(func);
-                }
-                printf("\n## No de comparacoes da busca Binaria: %i", tot_comp_bin);
-                printf("\n## Tempo gasto na Execucao da busca Binaria: %.6f s\n", temp_exe_bin);
-                printf("______________________________________________________________________\n\n");
-
+        switch (condicao)
+        {
+        case 1:
+            criar_bd(arq, arq_ins);
+            break;
+        case 2:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de buscar por um funcionario !!!\n");
                 break;
-            case 3:
-                if(baseid == 0){
-                    printf("\n!!! E necessario criar uma base de dados antes de buscar por um funcionario !!!\n");
-                    break;
-                }
-                printf("\nDigite o codigo do funcionario que deseja buscar: _ ");
-                scanf("%i", &find_func);
-
-                insertion_sort_disco(arq_ins, qtd_de_Func);
-
-                start_time_bin = clock(); //Início da contagem do tempo de execução da busca binaria
-                func = buscaBinaria(find_func, qtd_de_Func, arq_ins, &tot_comp_bin);
-                end_time_bin = clock(); //Término da contagem do tempo de execução da busca binaria
-
-                temp_exe_bin += (double)(end_time_bin-start_time_bin)/CLOCKS_PER_SEC; //Cálculo do tempo de execução da busca binaria
-                
-                printf("\n\n________ ## Teste utilizando a Busca Binaria (INSERTION_SORTING) ## ________\n\n");
-                if(func == NULL){
-                    printf("Funcionario inexistente na base de dados\n");
-                    printf("____________________________________________________________________________\n\n");
-                }else{
-                    printf("Funcionario encontrado: Imprimindo...");
-                    toString(func);
-                }
-                printf("\n## No de comparacoes da busca Binaria: %i", tot_comp_bin);
-                printf("\n## Tempo gasto na Execucao da busca Binaria: %.6f s\n", temp_exe_bin);
-                printf("____________________________________________________________________________\n\n");
-
+            }
+            else
+            {
+                exec_Keysorting(arq, arq_ordenado);
+            }
+            break;
+        case 3:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de buscar por um funcionario !!!\n");
                 break;
-            case 4:
-                if(baseid == 0){
-                    printf("\n!!! E necessario criar uma base de dados antes de buscar por um funcionario !!!\n");
-                    break;
-                }
-                printf("\nDigite o codigo do funcionario que deseja buscar: _ ");
-                scanf("%i", &find_func);
-                start_time_seq = clock(); //Início da contagem do tempo de execução da busca sequencial
-                func = busca_sequencial(find_func, arq, qtd_de_Func, &tot_comp_seq);
-                end_time_seq = clock(); //Término da contagem do tempo de execução da busca sequencial
-
-                temp_exe_seq += (double)(end_time_seq-start_time_seq)/CLOCKS_PER_SEC; //Cálculo do tempo de execução da busca sequencial
-
-                printf("\n\n________ ## Teste utilizando a Busca Sequencial ## ________\n\n");
-                if(func == NULL){
-                    printf("!!! Funcionario inexistente na base de dados\n");
-                     printf("\n                 ##### Observacao #####\n\nO Codigo dos funcionarios eh gerado de forma aleatoria\ntente executar novamente ou usar outro codigo\n");
-                    printf("____________________________________________________________\n\n");
-                    break;
-                }else{
-                    printf("Funcionario encontrado: Imprimindo...");
-                    toString(func);
-                }
-                printf("\n## No de comparacoes da busca sequencial: %i",tot_comp_seq);
-                printf("\n## Tempo gasto na Execucao da busca sequencial: %.6f s\n", temp_exe_seq);
-                printf("____________________________________________________________\n\n");
+            }
+            else
+            {
+                exec_insertion_sort(arq_ins);
+            }
+            break;
+        case 4:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de buscar por um funcionario !!!\n");
                 break;
-            case 5:
-                if(baseid == 0){
-                    printf("\n!!! E necessario criar uma base de dados antes de imprimi-la !!!\n");
-                    break;
-                }
-                int cond_bd;
-                printf("\nPara imprimir a base de dados ORDENADA tecle [1]\nPara imprimir a base de dados DESORDENADA tecle [2]\nopcao: _ ");
-                scanf("%i", &cond_bd);
-                if(cond_bd == 1){
-                    if(arq_ord_id != 0){
-                        for(int i=0; i<qtd_de_Func; i++){
-                            fseek(arq_ordenado, i*sizeof(TFunc), SEEK_SET);
-                            func = le(arq_ordenado);
-                            toString(func);
-                        }
-                    }else{
-                        printf("\n!!! E necessario realizar o Key sorting antes de imprimir os dados ordenados !!!\n");
-                    }
-                }else if(cond_bd == 2){
-                    for(int i=0; i<qtd_de_Func; i++){
-                        fseek(arq, i*sizeof(TFunc), SEEK_SET);
-                        func = le(arq);
-                        toString(func);
-                    }
-                }else{
-                    printf("\n!!! Opcao invalida, tente novamente !!!\n");
-                    break;
-                }
+            }
+            else
+            {
+                exec_busca_sequencial(arq);
+            }
+            break;
+        case 5:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de imprimi-la !!!\n");
                 break;
-            case 6:
-                if(baseid == 0){
-                    printf("\n!!! E necessario criar uma base de dados antes de gerar particoes !!!\n");
-                    break;
-                }
-                selec_sub();
+            }
+            else
+            {
+                imprime_bd(arq, arq_ordenado);
+            }
+            break;
+        case 6:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de gerar particoes !!!\n");
                 break;
-            case 7:
-                if(baseid == 0){
-                    printf("\n!!! E necessario criar uma base de dados antes de gerar particoes !!!\n");
-                    break;
-                }
-                selec_nat();
+            }
+            selec_sub();
+            break;
+        case 7:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de gerar particoes !!!\n");
                 break;
-            case 0:
-                printf("\n## Obrigado por usar este programa :) ##\n");
+            }
+            selec_nat();
+            break;
+        case 8:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de gerar tabelas hash !!!\n");
                 break;
-            default:
-                printf("\n !!! Opacao invalida, tente novamente !!!\n");
+            }
+            exec_hash_externo(arq);
+            break;
+        case 9:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de imprimir tebelas hash !!!\n");
                 break;
+            }
+            imprime_hash_externo();
+            break;
+        case 10:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de gerar tabelas hash !!!\n");
+                break;
+            }
+            exec_hash_simples(arq);
+            break;
+        case 11:
+            if (base_verify == 0)
+            {
+                printf("\n!!! E necessario criar uma base de dados antes de imprimir tebelas hash !!!\n");
+                break;
+            }
+            imprime_hash_simples();
+            break;
+        case 0:
+            printf("\n## Obrigado por usar este programa :) ##\n");
+            break;
+        default:
+            printf("\n !!! Opacao invalida, tente novamente !!!\n");
+            break;
         }
-    }while(condicao!= 0);
+    } while (condicao != 0);
 
-    free(func);
     fclose(arq);
     fclose(arq_ordenado);
     fclose(arq_ins);
+    free(nomes);
+    free(p);
 
     return 0;
 }
 
-
-void toString(TFunc *func){
-
-    printf("\n\nNome: %s", func->nome);
-    printf("\nCPF: %s", func->cpf);
-    printf("\nCodigo: %i", func->cod);
-    printf("\nData de nascimento: %s", func->data_nascimento);
-    printf("\nSalario: %.2f", func->salario);
-    printf("\n");
-
-}
-
-void salva_arq(TFunc *func, FILE *arq){
-    
-    fwrite(&func->cod, sizeof(int), 1, arq);
-    fwrite(func->nome, sizeof(char), sizeof(func->nome), arq);
-    fwrite(func->cpf, sizeof(char), sizeof(func->cpf), arq);
-    fwrite(func->data_nascimento, sizeof(char), sizeof(func->data_nascimento), arq);
-    fwrite(&func->salario, sizeof(float), 1, arq);
-
-}
-
-TFunc *le(FILE *in){
-
-    TFunc *func = (TFunc*) malloc(sizeof(TFunc));
-
-    if(0 >= fread(&func->cod, sizeof(int), 1, in)){
-        free(func);
-        return NULL;
+void criar_bd(FILE *arq, FILE *arq_ins)
+{
+    printf("\nQuantos funcionarios serao inseridos na base de dados? [min: 0, max: 100] _ ");
+    scanf("%i", &qtd_funcionarios);
+    if (qtd_funcionarios > 100 || qtd_funcionarios <= 0)
+    {
+        printf("\n!! Quantidade invalida !! / min = 0 e max = 100\n");
     }
-    fread(func->nome, sizeof(char), sizeof(func->nome), in);
-    fread(func->cpf, sizeof(char), sizeof(func->cpf), in);
-    fread(func->data_nascimento, sizeof(char), sizeof(func->data_nascimento), in);
-    fread(&func->salario, sizeof(float), 1, in);
-
-    return func;
-}
-
-void cria_base_de_dados(FILE *arq, int nFunc){
-
-    int booleanVerify[nFunc];   // 0 = false   1 = true
-    for(int i=0; i<nFunc; i++){
-        booleanVerify[i] = 0;
-    }
-
-    srand(time(NULL));
-
-    for(int i=1; i<= nFunc; i++){
-
-        int rand_num =rand() % nFunc;
-
-        if(booleanVerify[rand_num] == 0){
-
-            TFunc func;
-
-            func.cod = rand_num;
-            sprintf(func.nome, "Funcionario %i", rand_num);
-            sprintf(func.cpf, "000.000.000-00");
-            sprintf(func.data_nascimento, "01/01/2000");
-            func.salario = 1000 + rand_num;
-            fseek(arq, (i-1)*sizeof(TFunc), SEEK_SET);
-            salva_arq(&func, arq);
-
-            booleanVerify[rand_num] = 1;
-
-        }else{
-            i--;
-        }
+    else
+    {
+        cria_base_de_dados(arq, qtd_funcionarios); // Cria uma database no arquivo com funcionarios de códigos aleatórios
+        cria_base_de_dados(arq_ins, qtd_funcionarios);
+        printf("\n*** Base de dados criada com sucesso\n");
+        base_verify++;
     }
 }
 
-TFunc *busca_sequencial(int cod, FILE *arq, int tam_arq, int *comp){
+void exec_Keysorting(FILE *arq, FILE *arq_ordenado)
+{
 
-    for(int i=0; i<tam_arq; i++){
-        *comp +=1;
-        fseek(arq, i*sizeof(TFunc), SEEK_SET);
-        TFunc *func = le(arq);
-        if(func->cod == cod){
-            return func;
-        }
+    clock_t start_time_bin, end_time_bin;
+    int tot_comp_bin = 0, func_cod;
+    double temp_exe_bin = 0.0;
+    TFunc *func;
+
+    printf("\nDigite o codigo do funcionario que deseja buscar: _ ");
+    scanf("%i", &func_cod);
+    Key_sorting_file(arq, arq_ordenado, qtd_funcionarios); // Key_sorting é chamada recebendo o arquivo desordenado dados_KEY.dat, o arquivo vazio dados_ordenados.dat e a quantidade de funcionarios cadastrados. Ao fim da execução teremos o arquivo dados_ordenados.dat preenchido ordenadamente
+
+    start_time_bin = clock(); // Início da contagem do tempo de execução da busca sequencial
+    func = buscaBinaria(func_cod, qtd_funcionarios, arq_ordenado, &tot_comp_bin);
+    end_time_bin = clock(); // Término da contagem do tempo de execução da busca binaria
+
+    temp_exe_bin += (double)(end_time_bin - start_time_bin) / CLOCKS_PER_SEC; // Cálculo do tempo de execução da busca binaria
+
+    printf("\n\n________ ## Teste utilizando a Busca Binaria (KEY_SORTING) ## ________\n\n");
+    if (func == NULL)
+    {
+        printf("Funcionario inexistente na base de dados\n");
+        printf("______________________________________________________________________\n\n");
     }
+    else
+    {
+        printf("Funcionario encontrado: Imprimindo...");
+        toString(func);
+    }
+    printf("\n## No de comparacoes da busca Binaria: %i", tot_comp_bin);
+    printf("\n## Tempo gasto na Execucao da busca Binaria: %.6f s\n", temp_exe_bin);
+    printf("______________________________________________________________________\n\n");
 
-    return NULL;
-
+    arq_ordenado_verify++;
 }
 
-TFunc *buscaBinaria (int cod, int qtd_func, FILE *arq, int *comp){
+void exec_insertion_sort(FILE *arq_ins)
+{
 
-    int l = 0, r = qtd_func-1; // l = left / r = right
+    clock_t start_time_bin, end_time_bin;
+    int tot_comp_bin = 0, func_cod;
+    double temp_exe_bin = 0.0;
+    TFunc *func;
 
-    while(l <= r){
+    printf("\nDigite o codigo do funcionario que deseja buscar: _ ");
+    scanf("%i", &func_cod);
 
-        *comp +=1;
-        int meio = (l+r)/2;
+    insertion_sort_disco(arq_ins, qtd_funcionarios);
 
-        fseek(arq, meio*sizeof(TFunc), SEEK_SET);
-        TFunc *func = le(arq);
+    start_time_bin = clock(); // Início da contagem do tempo de execução da busca binaria
+    func = buscaBinaria(func_cod, qtd_funcionarios, arq_ins, &tot_comp_bin);
+    end_time_bin = clock(); // Término da contagem do tempo de execução da busca binaria
 
-        if(cod == func->cod){
-            return func;
-        }else if(func->cod < cod){
-            l = meio+1;
-        }else{
-            r = meio-1;
-        }
+    temp_exe_bin += (double)(end_time_bin - start_time_bin) / CLOCKS_PER_SEC; // Cálculo do tempo de execução da busca binaria
+
+    printf("\n\n________ ## Teste utilizando a Busca Binaria (INSERTION_SORTING) ## ________\n\n");
+    if (func == NULL)
+    {
+        printf("Funcionario inexistente na base de dados\n");
+        printf("____________________________________________________________________________\n\n");
     }
-    return NULL;
+    else
+    {
+        printf("Funcionario encontrado: Imprimindo...");
+        toString(func);
+    }
+    printf("\n## No de comparacoes da busca Binaria: %i", tot_comp_bin);
+    printf("\n## Tempo gasto na Execucao da busca Binaria: %.6f s\n", temp_exe_bin);
+    printf("____________________________________________________________________________\n\n");
 }
 
-void ordena_array(Key_sorting *array, int qtd_func){
+void exec_busca_sequencial(FILE *arq)
+{
 
-    for (int i=0; i< qtd_func; i++) {
-        for (int j=i+1; j< qtd_func; j++) {
-            if (array[i].cod > array[j].cod) {
-                
-                Key_sorting aux = array[i];
-                array[i] = array[j];
-                array[j] = aux;
+    clock_t start_time_seq, end_time_seq;
+    int tot_comp_seq = 0, func_cod;
+    double temp_exe_seq = 0.0;
+    TFunc *func;
 
+    printf("\nDigite o codigo do funcionario que deseja buscar: _ ");
+    scanf("%i", &func_cod);
+    start_time_seq = clock(); // Início da contagem do tempo de execução da busca sequencial
+    func = busca_sequencial(func_cod, arq, qtd_funcionarios, &tot_comp_seq);
+    end_time_seq = clock(); // Término da contagem do tempo de execução da busca sequencial
+
+    temp_exe_seq += (double)(end_time_seq - start_time_seq) / CLOCKS_PER_SEC; // Cálculo do tempo de execução da busca sequencial
+
+    printf("\n\n________ ## Teste utilizando a Busca Sequencial ## ________\n\n");
+    if (func == NULL)
+    {
+        printf("!!! Funcionario inexistente na base de dados\n");
+        printf("\n                 ##### Observacao #####\n\nO Codigo dos funcionarios eh gerado de forma aleatoria\ntente executar novamente ou usar outro codigo\n");
+        printf("____________________________________________________________\n\n");
+    }
+    else
+    {
+        printf("Funcionario encontrado: Imprimindo...");
+        toString(func);
+    }
+    printf("\n## No de comparacoes da busca sequencial: %i", tot_comp_seq);
+    printf("\n## Tempo gasto na Execucao da busca sequencial: %.6f s\n", temp_exe_seq);
+    printf("____________________________________________________________\n\n");
+}
+
+void imprime_bd(FILE *arq, FILE *arq_ordenado)
+{
+
+    int cond_bd;
+    TFunc *func;
+
+    printf("\nPara imprimir a base de dados ORDENADA tecle [1]\nPara imprimir a base de dados DESORDENADA tecle [2]\nopcao: _ ");
+    scanf("%i", &cond_bd);
+    if (cond_bd == 1)
+    {
+        if (arq_ordenado_verify != 0)
+        {
+            for (int i = 0; i < qtd_funcionarios; i++)
+            {
+                fseek(arq_ordenado, i * sizeof(TFunc), SEEK_SET);
+                func = le(arq_ordenado);
+                toString(func);
             }
         }
+        else
+        {
+            printf("\n!!! E necessario realizar o Key sorting antes de imprimir os dados ordenados !!!\n");
+        }
     }
-}
-
-void Key_sorting_file(FILE *arq, FILE *arq_ordenado, int qtd_func){
-
-    printf("\nRealizando Key Sorting ... \n");
-
-    clock_t start_time, end_time;
-    double temp_exe = 0.0;
-
-    start_time = clock();
-
-    Key_sorting tag_array[qtd_func];
-
-    rewind(arq);
-
-    for(int i=0; i<qtd_func; i++){
-        fseek(arq, i*sizeof(TFunc), SEEK_SET);
-        tag_array[i].RRN = ftell(arq);
-        TFunc *func = le(arq); 
-        tag_array[i].cod = func->cod;
-    }
-
-    ordena_array(&tag_array, qtd_func);
-
-    rewind(arq);
-
-    for(int i=0; i<qtd_func; i++){
-
-        fseek(arq,tag_array[i].RRN, SEEK_SET);
-        TFunc *func = le(arq);
-
-        fseek(arq_ordenado, i*sizeof(TFunc), SEEK_SET);
-        salva_arq(func, arq_ordenado);
-    }
-
-    end_time = clock();
-
-    temp_exe += (double)(end_time-start_time)/CLOCKS_PER_SEC;
-    printf("\n## Tempo gasto na Execucao do Key Sorting: %.8f s\n", temp_exe);
-
-}
-
-void insertion_sort_disco(FILE *arq, int qtd_func){
-    clock_t start_time, end_time;
-    double temp_exe = 0.0;
-    start_time = clock();
-
-    printf("\nRealizando Insertion sort ... \n");
-    rewind(arq); 
-    int i;
-    for (int j = 2; j <= qtd_func; j++) {
-        fseek(arq, (j-1) * sizeof(TFunc), SEEK_SET);
-        TFunc *func_j = le(arq);
-        i = j - 1;
-        fseek(arq, (i-1) * sizeof(TFunc), SEEK_SET);
-        TFunc *func_i = le(arq);
-        while ((i > 0) && (func_i->cod > func_j->cod)) {
+    else if (cond_bd == 2)
+    {
+        for (int i = 0; i < qtd_funcionarios; i++)
+        {
             fseek(arq, i * sizeof(TFunc), SEEK_SET);
-            salva_arq(func_i, arq);
-            i = i - 1;
-            fseek(arq, (i-1) * sizeof(TFunc), SEEK_SET);
-            func_i = le(arq);
-         }
-        fseek(arq, (i) * sizeof(TFunc), SEEK_SET);
-        salva_arq(func_j, arq);
+            func = le(arq);
+            toString(func);
+        }
     }
-    fflush(arq);
-
-    end_time = clock();
-    temp_exe += (double)(end_time-start_time)/CLOCKS_PER_SEC;
-    printf("\n## Tempo gasto na Execucao do Insertion Sorting: %.8f s\n", temp_exe);
+    else
+    {
+        printf("\n!!! Opcao invalida, tente novamente !!!\n");
+    }
 }
 
-TFunc *funcionario(int cod, char *nome, char *cpf, char *data_nasc, float salario){
-    TFunc *funcionario = (TFunc *) malloc(sizeof(TFunc));
-    if(funcionario) memset(funcionario, 0, sizeof(TFunc));
-    funcionario->cod = cod;
-    strcpy(funcionario->nome, nome);
-    strcpy(funcionario->cpf, cpf);
-    strcpy(funcionario->data_nascimento, data_nasc);
-    funcionario->salario = salario;
+void selec_sub()
+{
 
-    return funcionario;    
-}
-
-int cmp_funcionario(TFunc *f1, TFunc *f2){
-    if(f1 == NULL){
-        return(f2 == NULL);
-    }
-    if(f1->cod != f2->cod){
-        return 0;
-    }
-    if(strcmp(f1->cpf, f2->cpf) != 0){
-        return 0;
-    }
-    if(strcmp(f1->nome, f2->nome) != 0){
-        return 0;
-    }
-    if(strcmp(f1->data_nascimento, f2->data_nascimento) != 0){
-        return 0;
-    }
-    if(f1->salario != f2->salario){
-        return 0;
-    }
-    return 1;
-}
-
-void selec_sub(){
-    
-	printf("\n Gerando particoes com SELECAO_SUBSTITUICAO...\n");
+    printf("\n Gerando particoes com SELECAO_SUBSTITUICAO...\n");
 
     nomes = cria_nomes(cria_str("p_ss1.dat"),
-                cria_nomes(cria_str("p_ss2.dat"),
-                    cria_nomes(cria_str("p_ss3.dat"),
-                        cria_nomes(cria_str("p_ss4.dat"),
-                            cria_nomes(cria_str("p_ss5.dat"),
-                                cria_nomes(cria_str("p_ss6.dat"),
-                                    cria_nomes(cria_str("p_ss7.dat"),
-                                        cria_nomes(cria_str("p_ss8.dat"),
-                                            cria_nomes(cria_str("p_ss9.dat"), NULL)))))))));
-    printf("\n");
+                       cria_nomes(cria_str("p_ss2.dat"),
+                                  cria_nomes(cria_str("p_ss3.dat"),
+                                             cria_nomes(cria_str("p_ss4.dat"),
+                                                        cria_nomes(cria_str("p_ss5.dat"),
+                                                                   cria_nomes(cria_str("p_ss6.dat"),
+                                                                              cria_nomes(cria_str("p_ss7.dat"),
+                                                                                         cria_nomes(cria_str("p_ss8.dat"),
+                                                                                                    cria_nomes(cria_str("p_ss9.dat"), NULL)))))))));
 
-	selecao_com_substituicao(NOME_ARQUIVO_ENTRADA,nomes,6);
+    selecao_com_substituicao(NOME_ARQUIVO_ENTRADA, nomes, 6);
 
+    printf("\nParticoes geradas com sucesso !!\n");
 }
 
-void selec_nat(){
+void selec_nat()
+{
 
-    printf("\n Gerando particoes com SELECAO_NATURAL...\n");
+    printf("\nGerando particoes com SELECAO_NATURAL...\n");
 
     nomes = cria_nomes(cria_str("p_sn1.dat"),
-                cria_nomes(cria_str("p_sn2.dat"),
-                    cria_nomes(cria_str("p_sn3.dat"),
-                        cria_nomes(cria_str("p_sn4.dat"),
-                            cria_nomes(cria_str("p_sn5.dat"),
-                                cria_nomes(cria_str("p_sn6.dat"),
-                                    cria_nomes(cria_str("p_sn7.dat"),
-                                        cria_nomes(cria_str("p_sn8.dat"),
-                                            cria_nomes(cria_str("p_sn9.dat"), NULL)))))))));
-    printf("\n");
+                       cria_nomes(cria_str("p_sn2.dat"),
+                                  cria_nomes(cria_str("p_sn3.dat"),
+                                             cria_nomes(cria_str("p_sn4.dat"),
+                                                        cria_nomes(cria_str("p_sn5.dat"),
+                                                                   cria_nomes(cria_str("p_sn6.dat"),
+                                                                              cria_nomes(cria_str("p_sn7.dat"),
+                                                                                         cria_nomes(cria_str("p_sn8.dat"),
+                                                                                                    cria_nomes(cria_str("p_sn9.dat"), NULL)))))))));
 
-    selecao_natural(NOME_ARQUIVO_ENTRADA, nomes, 6,6);
+    selecao_natural(NOME_ARQUIVO_ENTRADA, nomes, 6, 6);
 
+    printf("\nParticoes geradas com sucesso !!\n");
+}
+
+void exec_hash_externo(FILE *arq)
+{
+
+    Func_info info_array[qtd_funcionarios];
+
+    THash_inicia_encad_externo(&tabela_hash, TAM_TABELA);
+
+    rewind(arq);
+
+    for (int i = 0; i < qtd_funcionarios; i++)
+    {
+        fseek(arq, i * sizeof(TFunc), SEEK_SET);
+        info_array[i].RRN = ftell(arq);
+        TFunc *func = le(arq);
+        info_array[i].func_cod = func->cod;
+
+        THash_insere_encad_externo(&tabela_hash, info_array[i]);
+    }
+
+    printf("\n!! Tabela hash criada com sucesso !! \n");
+
+    hash_verify++;
+}
+
+void imprime_hash_externo()
+{
+
+    if (hash_verify == 0)
+    {
+        printf("\n!!! E necessario gerar uma tabela hash antes de imprimi-la !!!\n");
+    }
+    else
+    {
+        imprime_tab_hash_encad_externo(&tabela_hash);
+    }
+}
+
+void exec_hash_simples(FILE *arq){
+
+    Func_info info_array_simples[qtd_funcionarios];
+
+    THash_inicia_simples(&tabela_hash_simples);
+
+    rewind(arq);
+
+    for (int i = 0; i < qtd_funcionarios; i++)
+    {
+        fseek(arq, i * sizeof(TFunc), SEEK_SET);
+        info_array_simples[i].RRN = ftell(arq);
+        TFunc *func = le(arq);
+        info_array_simples[i].func_cod = func->cod;
+
+        THash_insere_simples(&tabela_hash, info_array_simples[i]);
+    }
+
+    printf("\n!! Tabela hash criada com sucesso !! \n");
+
+    hash_verify++;    
+}
+
+void imprime_hash_simples()
+{
+    if (hash_verify == 0)
+    {
+        printf("\n!!! E necessario gerar uma tabela hash antes de imprimi-la !!!\n");
+    }
+    else
+    {
+        imprime_tab_hash_simples(&tabela_hash_simples);
+    }
 }
